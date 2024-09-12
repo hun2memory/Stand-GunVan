@@ -1,0 +1,34 @@
+util.create_thread(function()
+local os,assert,string,table,math = os,assert,string,table,math
+local util = util
+local menu = menu
+local memory = memory
+local native_invoker = native_invoker
+local players = players
+local v3 = v3
+pluto_use "0.9.1"
+
+----------------------
+----- DEF GLOBAL -----
+----------------------
+local joaat, ujoaat, toast, log, yield, draw_debug_text, reverse_joaat, call_addr, trigger_se =
+    util.joaat, util.ujoaat, util.toast, util.log, util.yield, util.draw_debug_text, util.reverse_joaat, util.call_foreign_function, util.trigger_script_event
+
+math.max_int = (1 << 31) - 1
+math.max_float = ((1 << 31) - 1) + 0.0
+
+-------------------------
+----- BLOCK STARTUP -----
+-------------------------
+do
+    util.keep_running()
+    util.require_natives("3274a", "g")
+    native_invoker.accept_bools_as_ints(true)
+    util.set_nullptr_preference(true) -- only applied to certains api but still useable anyway.
+	local supported_game_version <const> = "1.69-3274"
+	if (game_version := menu.get_version().game) != supported_game_version then
+		toast($"This script was made for {supported_game_version}. The current game version is {game_version}.\nPlease note that some features or even the script may not work as intended.")
+	end
+end
+
+end) -- End of thread that cover entire scripts.
