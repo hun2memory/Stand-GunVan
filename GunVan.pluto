@@ -1,34 +1,434 @@
 util.create_thread(function()
 local os,assert,string,table,math = os,assert,string,table,math
 local util = util
+local filesystem = filesystem
 local menu = menu
 local memory = memory
 local native_invoker = native_invoker
 local players = players
+local chat = chat
 local v3 = v3
 pluto_use "0.9.1"
 
 ----------------------
 ----- DEF GLOBAL -----
 ----------------------
-local joaat, ujoaat, toast, log, yield, draw_debug_text, reverse_joaat, call_addr, trigger_se =
-    util.joaat, util.ujoaat, util.toast, util.log, util.yield, util.draw_debug_text, util.reverse_joaat, util.call_foreign_function, util.trigger_script_event
-
-math.max_int = (1 << 31) - 1
-math.max_float = ((1 << 31) - 1) + 0.0
+local log,toast,yield,joaat,ujoaat,reverse_joaat,get_label_text=
+    util.log,util.toast,util.yield,util.joaat,util.ujoaat,util.reverse_joaat,util.get_label_text
+math.max_int			= (1 << 31) - 1
+math.max_float			= ((1 << 31) - 1) + 0.0
 
 -------------------------
 ----- BLOCK STARTUP -----
 -------------------------
+local script_version <const>            = "V1.0"
+local supported_game_version <const>    = "1.69-3274"
+local git <const>                       = "https://github.com/hun2memory/Stand-GunVan"
 do
+    if (game_version := menu.get_version().game) != supported_game_version then
+        local msg <const> = $"GunVan Script {script_version} was made for {supported_game_version}. The current game version is {game_version}. Please manually update."
+        if not SCRIPT_SILENT_START then toast(msg) end
+        log(msg)
+        menu.my_root():divider($"!!! OUTDATED SCRIPT {script_version} !!!"):setTemporary()
+        menu.my_root():action("Open Script Folder",{},"",function()util.open_folder(filesystem.scripts_dir())end):setTemporary()
+        menu.my_root():hyperlink("Open Script Repository", git):setTemporary()
+        return
+    end
     util.keep_running()
     util.require_natives("3274a", "g")
     native_invoker.accept_bools_as_ints(true)
-    util.set_nullptr_preference(true) -- only applied to certains api but still useable anyway.
-    local supported_game_version <const> = "1.69-3274"
-    if (game_version := menu.get_version().game) != supported_game_version then
-        toast($"This script was made for {supported_game_version}. The current game version is {game_version}.\nPlease note that some features or even the script may not work as intended.")
+    util.set_nullptr_preference(true) -- Only applied to certains api Still useable anyway.
+end
+
+local update =
+{
+	Available=262145+33232,--XM22_GUN_VAN_AVAILABLE
+	PosID=2652592+2671,
+	Proximity=262145+33272,
+	WeaponDiscount=262145+33284,--XM22_GUN_VAN_SLOT_WEAPON_DISCOUNT_
+	ThrowableDiscount=262145+33299,--XM22_GUN_VAN_SLOT_THROWABLE_DISCOUNT_
+	ArmourDiscount=262145+33303,--XM22_GUN_VAN_SLOT_ARMOUR_DISCOUNT_
+	SlotWeapon=262145+33273,--XM22_GUN_VAN_SLOT_WEAPON_TYPE_
+	SlotThrowable=262145+33295,--XM22_GUN_VAN_SLOT_THROWABLE_TYPE_
+	MAX_SLOT_WEAPON=10,
+	MAX_SLOT_THROW=3,
+	MAX_SLOT_ARMOR=5,
+	DISC10=0.10000000149012,
+};
+local van_pos = --gunclub_shop switch vector3
+{
+	v3(-29.532, 6435.136, 31.162),
+	v3(1705.214, 4819.167, 41.75),
+	v3(1795.522, 3899.753, 33.869),
+	v3(1335.536, 2758.746, 51.099),
+	v3(795.583, 1210.78, 338.962),
+	v3(-3192.67, 1077.205, 20.594),
+	v3(-789.719, 5400.921, 33.915),
+	v3(-24.384, 3048.167, 40.703),
+	v3(2666.786, 1469.324, 24.237),
+	v3(-1454.966, 2667.503, 3.2),
+	v3(2340.418, 3054.188, 47.888),
+	v3(1509.183, -2146.795, 76.853),
+	v3(1137.404, -1358.654, 34.322),
+	v3(-57.208, -2658.793, 5.737),
+	v3(1905.017, 565.222, 175.558),
+	v3(974.484, -1718.798, 30.296),
+	v3(779.077, -3266.297, 5.719),
+	v3(-587.728, -1637.208, 19.611),
+	v3(733.99, -736.803, 26.165),
+	v3(-1694.632, -454.082, 40.712),
+	v3(-1330.726, -1163.948, 4.313),
+	v3(-496.618, 40.231, 52.316),
+	v3(275.527, 66.509, 94.108),
+	v3(260.928, -763.35, 30.559),
+	v3(-478.025, -741.45, 30.299),
+	v3(894.94, 3603.911, 32.56),
+	v3(-2166.511, 4289.503, 48.733),
+	v3(1465.633, 6553.67, 13.771),
+	v3(1101.032, -335.172, 66.944),
+	v3(149.683, -1655.674, 29.028)
+};
+
+-----------------------
+----- FUNC GLOBAL -----
+-----------------------
+local global_get_int,global_set_int,global_get_float,global_set_float
+local orig_script_global = memory.script_global
+memory.script_global = function(in_addr: number)
+	local addr: number = orig_script_global(in_addr)
+	if addr != nil then
+		return addr
+	end
+	return nil
+end
+do 
+	global_get_int = function(addr: number): number
+        if init := memory.script_global(addr) then
+            return memory.read_int(init)
+        end
+        return -1
+    end
+    global_set_int = function(addr: number, value: number): void
+        if init := memory.script_global(addr) then
+            memory.write_int(init, value)
+        end
+    end
+
+    global_get_float = function(addr: number): number
+        if init := memory.script_global(addr) then
+            return memory.read_float(init)
+        end
+        return -1.1
+    end
+    global_set_float = function(addr: number, value: number): void
+        if init := memory.script_global(addr) then
+            memory.write_float(init, value)
+        end
     end
 end
 
+
+-----------------------
+----- FUNC SCRIPT -----
+-----------------------
+local function prep_yield(control: bool = true): void
+    while (not util.is_session_started() or util.is_session_transition_active())
+		or (control and not IS_PLAYER_CONTROL_ON(players.user()))
+	do
+		yield(1500)
+    end
+end
+
+local function forceavailable(state: bool = true): void
+	if global_get_int(update.Available) != 1 then
+		global_set_int(update.Available, 1)
+	end
+end
+
+local function forceblip(state: bool = true): void
+	local sprite = GET_FIRST_BLIP_INFO_ID(844)
+	
+	if not state then
+		global_set_float(update.Proximity, 500.0)
+		SET_BLIP_AS_SHORT_RANGE(sprite, true)
+		return
+	end
+	
+	if global_get_float(update.Proximity) <= 500.0 then
+		global_set_float(update.Proximity, math.max_float)
+	end
+	
+	if (DOES_BLIP_EXIST(sprite) and IS_BLIP_SHORT_RANGE(sprite)) then
+		SET_BLIP_AS_SHORT_RANGE(sprite, false)
+	end
+end
+
+local function forcediscount(state: bool = true): void
+	if not state then
+		-- Weapons
+		for i=1,update.MAX_SLOT_WEAPON do
+			global_set_float(update.WeaponDiscount+i, 0.0)
+		end
+		-- Throwables
+		for i=1,update.MAX_SLOT_THROW do
+			global_set_float(update.ThrowableDiscount+i, 0.0)
+		end
+		-- Body Armor
+		for i=1,update.MAX_SLOT_ARMOR do
+			global_set_float(update.ArmourDiscount+i, 0.0)
+		end
+		return
+	end
+	-- Weapons
+	for i=1,update.MAX_SLOT_WEAPON do
+		if global_get_float(update.WeaponDiscount+i) < 0.10 then
+			global_set_float(update.WeaponDiscount+i, update.DISC10) -- Sometimes some slot can be float 0.5/50% discount
+		end
+	end
+	-- Throwables
+	for i=1,update.MAX_SLOT_THROW do
+		if global_get_float(update.ThrowableDiscount+i) < 0.10 then
+			global_set_float(update.ThrowableDiscount+i, update.DISC10)
+		end
+	end
+	-- Body Armor
+	for i=1,update.MAX_SLOT_ARMOR do
+		if global_get_float(update.ArmourDiscount+i) < 0.10 then
+			global_set_float(update.ArmourDiscount+i, update.DISC10)
+		end
+	end
+end
+
+
+
+local root <const> = menu.my_root()
+root:action("Set Waypoint On Gun Van", {}, "", function()
+	prep_yield()
+	local pos = van_pos[global_get_int(update.PosID)+1]
+	if not pos then
+        toast("Event currently unavailable. :(", TOAST_DEFAULT|TOAST_CONSOLE)
+		return
+    end 
+	util.set_waypoint(pos)
+end)
+root:action("Teleport To Gun Van", {}, "", function()
+	prep_yield()
+	local pos = van_pos[global_get_int(update.PosID)+1]
+	if not pos then
+        toast("Event currently unavailable. :(", TOAST_DEFAULT|TOAST_CONSOLE)
+		return
+    end 
+	SET_PED_COORDS_KEEP_VEHICLE(players.user_ped(), pos.x,pos.y,pos.z)
+end)
+
+local more <const>,BG = root:list("More+"),-1
+
+do
+	local slotmod<const>,s_weapons,s_throw=more:list("Slot Modifier"),{},{}
+	
+	--- One Time Dumps. Skill issue Just easier to debug.
+	local weapon_names,weapon_cat,weapon_by_cat={},{},{};
+	for id,tbl in util.get_weapons() do
+		weapon_names[tbl.hash]={
+			id = id,
+			label = tbl.label_key,
+			name = get_label_text(tbl.label_key),
+			catname = tbl.category,
+			catid = tbl.category_id
+		};
+		if not weapon_cat[tbl.category_id] then
+			weapon_cat[tbl.category_id] = tbl.category
+		end
+		
+		if not weapon_by_cat[tbl.category] then
+			weapon_by_cat[tbl.category] = {};
+		end
+		table.insert(weapon_by_cat[tbl.category], {
+			id = id,
+			catname = tbl.category,
+			catid = tbl.category_id,
+			label = tbl.label_key,
+			name = get_label_text(tbl.label_key),
+			hash = tbl.hash
+		});
+	end
+
+	--- WEAPONS ---
+	local l_weapons <const> = slotmod:list("Weapons",{},"",nil,nil,function()
+		for i=1,update.MAX_SLOT_WEAPON do
+			local Int32Hash <const> = global_get_int(update.SlotWeapon+i)
+			if Int32Hash == 0 then
+				s_weapons[i].menu_name = "None"
+				s_weapons[i].help_text = $"Weapon Slot {i}"
+				continue
+			end
+			local id,label,catname,name=weapon_names[Int32Hash].id,weapon_names[Int32Hash].label,weapon_names[Int32Hash].catname,weapon_names[Int32Hash].name
+			local disc<const> = math.floor(global_get_float(update.WeaponDiscount+i)*100.0)
+			s_weapons[i].menu_name = name
+			s_weapons[i].help_text = $"Weapon Slot {i}\n{catname}\n{reverse_joaat(Int32Hash)} ({id})\n{Int32Hash}\nDiscount {disc}%\nSelect to change slot."
+		end
+	end)
+	for i=1,update.MAX_SLOT_WEAPON do
+		s_weapons[i] = l_weapons:list($"Weapon Slot {i}")
+		for _,cat in weapon_cat do
+			if cat == "Throwables" then continue end
+			local listcat = s_weapons[i]:list_action(cat, {}, $"Modifying Weapon Slot {i}...", {}, function(val, _, __)
+				for x=1,2 do global_set_int(update.SlotWeapon+i, val) end
+				local catname,name=weapon_names[val].catname,weapon_names[val].name
+				toast($"Modified Weapon Slot {i} To {catname} | {name} | {reverse_joaat(val)} ({val})",TOAST_DEFAULT|TOAST_CONSOLE)
+			end)
+			local tmp={};
+			for cat2,arr in weapon_by_cat do
+				if cat2 != cat then continue end
+				for _,arr2 in arr do
+					table.insert(tmp, {arr2.hash, arr2.name})
+				end
+			end	
+			listcat:setListActionOptions(tmp)
+			listcat:setTemporary()
+		end
+		s_weapons[i]:action("None",{},$"Modify Weapon Slot {i} To None.",function()
+			for x=1,2 do global_set_int(update.SlotWeapon+i,0) end
+			toast($"Modified Weapon Slot {i} To None",TOAST_DEFAULT|TOAST_CONSOLE)
+			s_weapons[i]:focus()
+		end)
+	end
+	
+
+	--- THROWABLES ---
+	local l_throw <const> = slotmod:list("Throwables",{},"",nil,nil,function()
+		for i=1,update.MAX_SLOT_THROW do
+			local Int32Hash <const> = global_get_int(update.SlotThrowable+i)
+			if Int32Hash == 0 then
+				s_throw[i].menu_name = "None"
+				s_throw[i].help_text = $"Throwable Slot {i}"
+				continue
+			end
+			local id,label,catname,name=weapon_names[Int32Hash].id,weapon_names[Int32Hash].label,weapon_names[Int32Hash].catname,weapon_names[Int32Hash].name
+			local disc<const> = math.floor(global_get_float(update.ThrowableDiscount+i)*100.0)
+			s_throw[i].menu_name = name
+			s_throw[i].help_text = $"Throwable Slot {i}\n{catname}\n{reverse_joaat(Int32Hash)} ({id})\n{Int32Hash}\nDiscount {disc}%\nSelect to change slot."
+		end
+	end)
+	for i=1,update.MAX_SLOT_THROW do
+		s_throw[i] = l_throw:list($"Throwable Slot {i}")
+		for cat,arr in weapon_by_cat do
+			if cat != "Throwables" then continue end
+			for _,arr2 in arr do
+				s_throw[i]:action(arr2.name,{},$"Modifying Throwable Slot {i}...", function()
+					for x=1,2 do global_set_int(update.SlotThrowable+i,arr2.hash) end
+					toast($"Modified Throwable Slot {i} To {arr2.catname} | {arr2.name} | {reverse_joaat(arr2.hash)} ({arr2.hash})",TOAST_DEFAULT|TOAST_CONSOLE)
+					s_throw[i]:focus()
+				end)
+			end
+		end
+		s_throw[i]:action("None",{},$"Modify Throwable Slot {i} To None.",function()
+			for x=1,2 do global_set_int(update.SlotThrowable+i,0) end
+			toast($"Modified Throwable Slot {i} To None",TOAST_DEFAULT|TOAST_CONSOLE)
+			s_throw[i]:focus()
+		end)
+	end
+
+	
+	local preset <const> = slotmod:list_select("Preset Slot", {}, "Disabled: Custom\nGeneric: Legit Plebs\nOptimal: Railgun,Navy Revolver and more..", {
+		{0,"Disabled"},
+		{1,"Generic"},
+		{2,"Optimal"}
+	}, 0, function(val, menu_name, prev_val, click_type)
+		l_weapons.visible = (val == 0)
+		l_throw.visible = (val == 0)
+	end)
+	preset:setTemporary()
+	local GenericW <const> = {
+		joaat("weapon_bat"),
+		joaat("weapon_knife"),
+		joaat("weapon_tecpistol"),
+		joaat("weapon_assaultsmg"),
+		joaat("weapon_vintagepistol"),
+		joaat("weapon_combatmg"),
+		0, 0, 0, 0,
+	};
+	local GenericT <const> = {
+		joaat("weapon_grenade"),
+		joaat("weapon_stickybomb"),
+		joaat("weapon_smokegrenade"),
+	};
+	
+	local OptimalW <const> = {
+		joaat("weapon_railgunxm3"),
+		joaat("weapon_navyrevolver"),
+		joaat("weapon_stungun_mp"),
+		joaat("weapon_gadgetpistol"),
+		joaat("weapon_doubleaction"),
+		joaat("weapon_minigun"),
+		joaat("weapon_heavysniper_mk2"),
+		joaat("weapon_combatmg_mk2"),
+		joaat("weapon_tacticalrifle"),
+		joaat("weapon_specialcarbine_mk2"),
+	};
+	local OptimalT <const> = {		
+		joaat("weapon_stickybomb"),
+		joaat("weapon_molotov"),
+		joaat("weapon_pipebomb"),
+	};
+	BG = util.create_tick_handler(function()
+		prep_yield()
+		switch preset.value do
+			case 1:
+				for i=1,update.MAX_SLOT_WEAPON do
+					if global_get_int(update.SlotWeapon+i) != GenericW[i] then
+						global_set_int(update.SlotWeapon+i, GenericW[i])
+					end
+				end
+				for i=1,update.MAX_SLOT_THROW do
+					if global_get_int(update.SlotThrowable+i) != GenericT[i] then
+						global_set_int(update.SlotThrowable+i, GenericT[i])
+					end
+				end
+				break
+			case 2:
+				for i=1,update.MAX_SLOT_WEAPON do
+					if global_get_int(update.SlotWeapon+i) != OptimalW[i] then
+						global_set_int(update.SlotWeapon+i, OptimalW[i])
+					end
+				end
+				for i=1,update.MAX_SLOT_THROW do
+					if global_get_int(update.SlotThrowable+i) != OptimalT[i] then
+						global_set_int(update.SlotThrowable+i, OptimalT[i])
+					end
+				end
+				break
+		end
+	end)
+end
+
+more:toggle_loop("Force Available", {}, "Locally Force Gun Van Available If it's not available.", function() prep_yield() forceavailable() end, function() forceavailable(false) end)
+more:toggle_loop("Force Blip", {}, "Locally Makes Gun Van force blipped on the map just like in GTA+.", function() prep_yield() forceblip() end, function() forceblip(false) end)
+more:toggle_loop("Force 10% Discount", {}, "Locally Force 10% Discount For All Items In The Gun Van.", function() prep_yield() forcediscount() end, function() forcediscount(false) end)
+more:textslider_stateful("Print Event Informations",{}, "", {
+	"Log",
+	"Log & Chat",
+}, function(idx,_,__)
+	prep_yield()
+	local id = global_get_int(update.PosID)+1
+	local pos = van_pos[id]
+	if not pos then
+        toast($"Gun Van Event Currently Unavailable {id}. :(", TOAST_DEFAULT|TOAST_CONSOLE)
+		return
+    end 
+	local zoneid = GET_ZONE_AT_COORDS(pos.x,pos.y,pos.z)
+	local zonename = GET_FILENAME_FOR_AUDIO_CONVERSATION(GET_NAME_OF_ZONE(pos.x,pos.y,pos.z))
+	local str <const> = $"Gun Van ID {id} At {zonename} {zoneid}"
+	toast(str,TOAST_DEFAULT|TOAST_CONSOLE)
+	if idx != 1 then
+		chat.send_message(str,false,true,true)
+	end
+end)
+more:hyperlink("About", git, $"Script {script_version}"):setTemporary()
+util.on_pre_stop(function()
+	util.shoot_thread(BG)
+	forceavailable(false)
+	forceblip(false)
+	forcediscount(false)
+end)
 end) -- End of thread that cover entire scripts.
