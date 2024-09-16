@@ -14,80 +14,80 @@ pluto_use "0.9.1"
 ----- DEF GLOBAL -----
 ----------------------
 local log,toast,yield,joaat,ujoaat,reverse_joaat,get_label_text=
-    util.log,util.toast,util.yield,util.joaat,util.ujoaat,util.reverse_joaat,util.get_label_text
+	util.log,util.toast,util.yield,util.joaat,util.ujoaat,util.reverse_joaat,util.get_label_text
 math.max_int			= (1 << 31) - 1
 math.max_float			= ((1 << 31) - 1) + 0.0
 
 -------------------------
 ----- BLOCK STARTUP -----
 -------------------------
-local script_version <const>            = "V1.1"
+local script_version <const>            = "V1.2"
 local supported_game_version <const>    = "1.69-3274"
 local git <const>                       = "https://github.com/hun2memory/Stand-GunVan"
 do
-    if (game_version := menu.get_version().game) != supported_game_version then
-        local msg <const> = $"GunVan Script {script_version} was made for {supported_game_version}. The current game version is {game_version}. Please manually update."
-        if not SCRIPT_SILENT_START then toast(msg) end
-        log(msg)
-        menu.my_root():divider($"!!! OUTDATED SCRIPT {script_version} !!!"):setTemporary()
-        menu.my_root():action("Open Script Folder",{},"",function()util.open_folder(filesystem.scripts_dir())end):setTemporary()
-        menu.my_root():hyperlink("Open Script Repository", git):setTemporary()
-        return
-    end
-    util.keep_running()
-    util.require_natives("3274a", "g")
-    native_invoker.accept_bools_as_ints(true)
-    util.set_nullptr_preference(true) -- Only applied to certains api Still useable anyway.
+	if (game_version := menu.get_version().game) != supported_game_version then
+		local msg <const> = $"GunVan Script {script_version} was made for {supported_game_version}. The current game version is {game_version}. Please manually update."
+		if not SCRIPT_SILENT_START then toast(msg) end
+		log(msg)
+		menu.my_root():divider($"!!! OUTDATED SCRIPT {script_version} !!!"):setTemporary()
+		menu.my_root():action("Open Script Folder",{},"",function()util.open_folder(filesystem.scripts_dir())end):setTemporary()
+		menu.my_root():hyperlink("Open Script Repository", git):setTemporary()
+		return
+	end
+	util.keep_running()
+	util.require_natives("3274a", "g")
+	native_invoker.accept_bools_as_ints(true)
+	util.set_nullptr_preference(true) -- Only applied to certains api Still useable anyway.
 end
 
 local update =
 {
-	PosID=2652592+2671, 
-	Available=262145+33232,--XM22_GUN_VAN_AVAILABLE 
-	Proximity=262145+33272,--15999531 
-	WeaponDiscount=262145+33284,--XM22_GUN_VAN_SLOT_WEAPON_DISCOUNT_ 
-	ThrowableDiscount=262145+33299,--XM22_GUN_VAN_SLOT_THROWABLE_DISCOUNT_ 
-	ArmourDiscount=262145+33303,--XM22_GUN_VAN_SLOT_ARMOUR_DISCOUNT_ 
-	SlotWeapon=262145+33273,--XM22_GUN_VAN_SLOT_WEAPON_TYPE_ 
-	SlotThrowable=262145+33295,--XM22_GUN_VAN_SLOT_THROWABLE_TYPE_ 
-	Skins=262145+33309,--1490225691 
-	MAX_SLOT_WEAPON=10, 
-	MAX_SLOT_THROW=3, 
-	MAX_SLOT_ARMOR=5, 
-	DISC10=0.10000000149012, 
+	PosID=2652592+2671,
+	Available=262145+33232,--XM22_GUN_VAN_AVAILABLE
+	Proximity=262145+33272,--15999531
+	WeaponDiscount=262145+33284,--XM22_GUN_VAN_SLOT_WEAPON_DISCOUNT_
+	ThrowableDiscount=262145+33299,--XM22_GUN_VAN_SLOT_THROWABLE_DISCOUNT_
+	ArmourDiscount=262145+33303,--XM22_GUN_VAN_SLOT_ARMOUR_DISCOUNT_
+	SlotWeapon=262145+33273,--XM22_GUN_VAN_SLOT_WEAPON_TYPE_
+	SlotThrowable=262145+33295,--XM22_GUN_VAN_SLOT_THROWABLE_TYPE_
+	Skins=262145+33309,--1490225691
+	MAX_SLOT_WEAPON=10,
+	MAX_SLOT_THROW=3,
+	MAX_SLOT_ARMOR=5,
+	DISC10=0.10000000149012,
 };
 local van_pos = --gunclub_shop switch vector3
 {
-	v3(-29.532, 6435.136, 31.162), 
-	v3(1705.214, 4819.167, 41.75), 
-	v3(1795.522, 3899.753, 33.869), 
-	v3(1335.536, 2758.746, 51.099), 
-	v3(795.583, 1210.78, 338.962), 
-	v3(-3192.67, 1077.205, 20.594), 
-	v3(-789.719, 5400.921, 33.915), 
-	v3(-24.384, 3048.167, 40.703), 
-	v3(2666.786, 1469.324, 24.237), 
-	v3(-1454.966, 2667.503, 3.2), 
-	v3(2340.418, 3054.188, 47.888), 
-	v3(1509.183, -2146.795, 76.853), 
-	v3(1137.404, -1358.654, 34.322), 
-	v3(-57.208, -2658.793, 5.737), 
-	v3(1905.017, 565.222, 175.558), 
-	v3(974.484, -1718.798, 30.296), 
-	v3(779.077, -3266.297, 5.719), 
-	v3(-587.728, -1637.208, 19.611), 
-	v3(733.99, -736.803, 26.165), 
-	v3(-1694.632, -454.082, 40.712), 
-	v3(-1330.726, -1163.948, 4.313), 
-	v3(-496.618, 40.231, 52.316), 
-	v3(275.527, 66.509, 94.108), 
-	v3(260.928, -763.35, 30.559), 
-	v3(-478.025, -741.45, 30.299), 
-	v3(894.94, 3603.911, 32.56), 
-	v3(-2166.511, 4289.503, 48.733), 
-	v3(1465.633, 6553.67, 13.771), 
-	v3(1101.032, -335.172, 66.944), 
-	v3(149.683, -1655.674, 29.028) 
+	v3(-29.532, 6435.136, 31.162),
+	v3(1705.214, 4819.167, 41.75),
+	v3(1795.522, 3899.753, 33.869),
+	v3(1335.536, 2758.746, 51.099),
+	v3(795.583, 1210.78, 338.962),
+	v3(-3192.67, 1077.205, 20.594),
+	v3(-789.719, 5400.921, 33.915),
+	v3(-24.384, 3048.167, 40.703),
+	v3(2666.786, 1469.324, 24.237),
+	v3(-1454.966, 2667.503, 3.2),
+	v3(2340.418, 3054.188, 47.888),
+	v3(1509.183, -2146.795, 76.853),
+	v3(1137.404, -1358.654, 34.322),
+	v3(-57.208, -2658.793, 5.737),
+	v3(1905.017, 565.222, 175.558),
+	v3(974.484, -1718.798, 30.296),
+	v3(779.077, -3266.297, 5.719),
+	v3(-587.728, -1637.208, 19.611),
+	v3(733.99, -736.803, 26.165),
+	v3(-1694.632, -454.082, 40.712),
+	v3(-1330.726, -1163.948, 4.313),
+	v3(-496.618, 40.231, 52.316),
+	v3(275.527, 66.509, 94.108),
+	v3(260.928, -763.35, 30.559),
+	v3(-478.025, -741.45, 30.299),
+	v3(894.94, 3603.911, 32.56),
+	v3(-2166.511, 4289.503, 48.733),
+	v3(1465.633, 6553.67, 13.771),
+	v3(1101.032, -335.172, 66.944),
+	v3(149.683, -1655.674, 29.028)
 };
 
 -----------------------
@@ -133,11 +133,19 @@ end
 ----- FUNC SCRIPT -----
 -----------------------
 local function prep_yield(control: bool = true): void
-    while (not util.is_session_started() or util.is_session_transition_active())
-		or (control and not IS_PLAYER_CONTROL_ON(players.user()))
-	do
+	while (not util.is_session_started() or util.is_session_transition_active())
+		or (control and not IS_PLAYER_CONTROL_ON(players.user())) do
 		yield(1500)
-    end
+	end
+end
+
+local function prep_return(callback: function, control: bool = true): void
+	if (not util.is_session_started() or util.is_session_transition_active())
+		or (control and not IS_PLAYER_CONTROL_ON(players.user())) then
+		return
+	else
+		callback()
+	end
 end
 
 local function forceavailable(state: bool = true): void
@@ -208,22 +216,24 @@ end
 
 local root <const> = menu.my_root()
 root:action("Set Waypoint On Gun Van", {}, "", function()
-	prep_yield()
-	local pos = van_pos[global_get_int(update.PosID)+1]
-	if not pos then
-        toast("Event currently unavailable. :(", TOAST_DEFAULT|TOAST_CONSOLE)
-		return
-    end 
-	util.set_waypoint(pos)
+	prep_return(function()
+		local pos = van_pos[global_get_int(update.PosID)+1]
+		if not pos then
+		toast("Event currently unavailable. :(", TOAST_DEFAULT|TOAST_CONSOLE)
+			return
+		end
+		util.set_waypoint(pos)
+	end)
 end)
 root:action("Teleport To Gun Van", {}, "", function()
-	prep_yield()
-	local pos = van_pos[global_get_int(update.PosID)+1]
-	if not pos then
-        toast("Event currently unavailable. :(", TOAST_DEFAULT|TOAST_CONSOLE)
-		return
-    end 
-	SET_PED_COORDS_KEEP_VEHICLE(players.user_ped(), pos.x,pos.y,pos.z)
+	prep_return(function()
+		local pos = van_pos[global_get_int(update.PosID)+1]
+		if not pos then
+		toast("Event currently unavailable. :(", TOAST_DEFAULT|TOAST_CONSOLE)
+			return
+		end
+		SET_PED_COORDS_KEEP_VEHICLE(players.user_ped(), pos.x,pos.y,pos.z)
+	end)
 end)
 
 local more <const>,BG = root:list("More+"),-1
@@ -415,27 +425,28 @@ more:textslider_stateful("Print Event Informations",{}, "", {
 	"Log",
 	"Log & Chat",
 }, function(idx,_,__)
-	prep_yield()
-	local id = global_get_int(update.PosID)+1
-	local pos = van_pos[id]
-	if not pos then
-        toast($"Gun Van Event Currently Unavailable {id}. :(", TOAST_DEFAULT|TOAST_CONSOLE)
-		return
-    end 
-	local zoneid = GET_ZONE_AT_COORDS(pos.x,pos.y,pos.z)
-	local zonename = GET_FILENAME_FOR_AUDIO_CONVERSATION(GET_NAME_OF_ZONE(pos.x,pos.y,pos.z))
-	local str <const> = $"Gun Van ID {id} At {zonename} {zoneid}"
-	toast(str,TOAST_DEFAULT|TOAST_CONSOLE)
-	if idx != 1 then
-		chat.send_message(str,false,true,true)
-	end
+	prep_return(function()
+		local id = global_get_int(update.PosID)+1
+		local pos = van_pos[id]
+		if not pos then
+			toast($"Gun Van Event Currently Unavailable {id}. :(", TOAST_DEFAULT|TOAST_CONSOLE)
+			return
+		end
+		local zoneid = GET_ZONE_AT_COORDS(pos.x,pos.y,pos.z)
+		local zonename = GET_FILENAME_FOR_AUDIO_CONVERSATION(GET_NAME_OF_ZONE(pos.x,pos.y,pos.z))
+		local str <const> = $"Gun Van ID {id} At {zonename} {zoneid}"
+		toast(str,TOAST_DEFAULT|TOAST_CONSOLE)
+		if idx != 1 then
+			chat.send_message(str,false,true,true)
+		end
+	end)
 end)
 more:hyperlink("About", git, $"Script {script_version}"):setTemporary()
 util.on_pre_stop(function()
-	util.shoot_thread(BG) 
-	forceavailable(false) 
-	forceblip(false) 
-	forcediscount(false) 
-	forceskins(false) 
+	util.shoot_thread(BG)
+	forceavailable(false)
+	forceblip(false)
+	forcediscount(false)
+	forceskins(false)
 end)
 end) -- End of thread that cover entire scripts.
