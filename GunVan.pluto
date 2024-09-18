@@ -21,8 +21,8 @@ math.max_float			= ((1 << 31) - 1) + 0.0
 -------------------------
 ----- BLOCK STARTUP -----
 -------------------------
-local script_version <const>            = "V1.2"
-local supported_game_version <const>    = "1.69-3274"
+local script_version <const>            = "V1.3"
+local supported_game_version <const>    = "1.69-3323"
 local git <const>                       = "https://github.com/hun2memory/Stand-GunVan"
 do
 	if (game_version := menu.get_version().game) != supported_game_version then
