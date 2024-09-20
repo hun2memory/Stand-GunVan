@@ -9,6 +9,8 @@ local players = players
 local chat = chat
 local v3 = v3
 pluto_use "0.9.1"
+collectgarbage("incremental", 110, 100)
+math.randomseed(math.floor(os.clock()) + os.time())
 
 ----------------------
 ----- DEF GLOBAL -----
@@ -21,7 +23,7 @@ math.max_float			= ((1 << 31) - 1) + 0.0
 -------------------------
 ----- BLOCK STARTUP -----
 -------------------------
-local script_version <const>            = "V1.3"
+local script_version <const>            = "V1.4"
 local supported_game_version <const>    = "1.69-3323"
 local git <const>                       = "https://github.com/hun2memory/Stand-GunVan"
 do
@@ -132,20 +134,30 @@ end
 -----------------------
 ----- FUNC SCRIPT -----
 -----------------------
+local fm_mission_controller <const>, fm_mission_controller_2020 <const> =
+	joaat("fm_mission_controller"), joaat("fm_mission_controller_2020")
+
+local function is_fm_mission(): bool
+	return GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(fm_mission_controller) > 0
+		or GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(fm_mission_controller_2020) > 0
+end
+
 local function prep_yield(control: bool = true): void
-	while (not util.is_session_started() or util.is_session_transition_active())
-		or (control and not IS_PLAYER_CONTROL_ON(players.user())) do
-		yield(1500)
-	end
+	while (not util.is_session_started() or util.is_session_transition_active()) 
+		or is_fm_mission() 
+		or (control and not IS_PLAYER_CONTROL_ON(players.user())) do 
+		yield(1500) 
+	end 
 end
 
 local function prep_return(callback: function, control: bool = true): void
-	if (not util.is_session_started() or util.is_session_transition_active())
-		or (control and not IS_PLAYER_CONTROL_ON(players.user())) then
-		return
-	else
-		callback()
-	end
+	if (not util.is_session_started() or util.is_session_transition_active()) 
+		or is_fm_mission() 
+		or (control and not IS_PLAYER_CONTROL_ON(players.user())) then 
+		return 
+	else 
+		callback() 
+	end 
 end
 
 local function forceavailable(state: bool = true): void
